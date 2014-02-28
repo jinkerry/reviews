@@ -7,6 +7,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.log4j.Logger;
@@ -97,6 +98,23 @@ public class HttpTools {
         return resp;
     }
 
+    public static String[] put(String url, Header[] headers) throws IOException {
+        HttpPut httpPut = new HttpPut(url);
+        if (headers != null && headers.length != 0) {
+            httpPut.setHeaders(headers);
+        }
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpResponse httpResponse = httpClient.execute(httpPut);
+
+        String[] resp = new String[2];
+        resp[0] =  httpResponse.getStatusLine().toString();
+        resp[1] =  processResponse(httpResponse);
+
+        log.debug("PUT. URL= " + url + ", status: " + httpResponse.getStatusLine());
+        httpPut.abort();
+        return resp;
+    }
+
 
     private static String processResponse(HttpResponse httpResponse) throws IOException {
         String response = "";
@@ -109,20 +127,8 @@ public class HttpTools {
         return response;
     }
 
-    /**
-     * request header
-     */
-    private Header[] generateHeader(String productId, String auth) {
-        List<Header> list = new ArrayList<Header>();
-        list.add(new BasicHeader("X-Product-Id", productId));
-        list.add(new BasicHeader("Authorization", auth));
-        list.add(new BasicHeader("Accept", "application/json"));// GET
-        list.add(new BasicHeader("Content-Type", "application/x-www-form-urlencoded"));// POST
-        return list.toArray(new Header[] {});
-    }
 
-
-   public static Document getXML(String response) throws UnsupportedEncodingException, DocumentException {
+    public static Document getXML(String response) throws UnsupportedEncodingException, DocumentException {
        InputStream in = new ByteArrayInputStream(response.getBytes("UTF-8"));
 
        SAXReader saxReader = new SAXReader();
@@ -132,6 +138,6 @@ public class HttpTools {
 
        return doc;
 
-   }
+    }
 
 }

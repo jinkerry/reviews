@@ -1,8 +1,11 @@
 package com.github.jinkerry.reviews.utils;
 
 import com.github.jinkerry.reviews.data.CommonData;
+import com.github.jinkerry.reviews.meta.DbSubject;
+import com.github.jinkerry.reviews.meta.GdRating;
 import com.github.jinkerry.reviews.meta.Review;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.message.BasicHeader;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
@@ -67,13 +70,25 @@ public class ReviewsClient {
         return response;
     }
 
-    public void createReview() throws IOException {
+    public String[] createReview(String id, String content, String title, String value) throws IOException {
         String url = "http://api.douban.com/reviews";
         Header[] headers = new Header[1];
         headers[0] = new BasicHeader("Content-Type", "text/xml");
-        String[] response = HttpTools.post(url, headers, null);
+
+        Review review = new Review(id, content, value, title);
+        HttpEntity httpEntity = generateCreateEntiry(review);
+
+        String[] response = HttpTools.post(url, headers, httpEntity);
         logger.info(url + " : " + response[1]);
 
+        return response;
+
+    }
+
+    private HttpEntity generateCreateEntiry(Review re) {
+        ReviewConverter.convertToXML(re);
+
+        return null;  //To change body of created methods use File | Settings | File Templates.
     }
 
     public void updateReview(){
@@ -126,26 +141,28 @@ public class ReviewsClient {
         String value = node.getText();
 
         if (name.equals("id")){
-            review.setId(value);
+            DbSubject db = new DbSubject(value);
+            review.setDbSubject(db);
         }
         else if (name.equals("title")){
             review.setTitle(value);
         }
         else if (name.equals("summary")){
-            review.setSummary(value);
+            review.setContent(value);
         }
         else if (name.equals("rating")){
-            review.setGdRating(node.attributeValue("value"));
+            GdRating gd = new GdRating(node.attributeValue("value"));
+            review.setGdRating(gd);
         }
 
         return review;
     }
 
     private void printReview(Review rev){
-        logger.info("id: " + rev.getId());
+        logger.info("id: " + rev.getDbSubject().getId());
         logger.info("title: " + rev.getTitle());
-        logger.info("summary: " + rev.getSummary());
-        logger.info("rating: " + rev.getGdRating());
+        logger.info("summary: " + rev.getContent());
+        logger.info("rating: " + rev.getGdRating().getValue());
 
     }
 
@@ -155,5 +172,10 @@ public class ReviewsClient {
 
         //Review rev = client.getReview("6273744");
         //client.printReview(rev);
+        String id = "http://api.douban.com/movie/subject/1424406";
+        String content = "渡边唯一的仁慈，是让小鬼艾德带走了小狗...";
+        String value = "4";
+        String title = "终点之后";
+        client.createReview(id, content, value, title);
     }
 }
